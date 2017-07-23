@@ -20,13 +20,14 @@ INITIAL_CONST = 1e-3     # the initial constant c to pick as a first guess
 class CarliniL2:
     def __init__(self, sess, model, batch_size=1, confidence = CONFIDENCE,
                  targeted = TARGETED, learning_rate = LEARNING_RATE,
-                 binary_search_steps = BINARY_SEARCH_STEPS, max_iterations = MAX_ITERATIONS,
-                 abort_early = ABORT_EARLY, 
+                 binary_search_steps = BINARY_SEARCH_STEPS,
+                 max_iterations = MAX_ITERATIONS,
+                 abort_early = ABORT_EARLY,
                  initial_const = INITIAL_CONST):
         """
-        The L_2 optimized attack. 
+        The L_2 optimized attack.
 
-        This attack is the most efficient and should be used as the primary 
+        This attack is the most efficient and should be used as the primary
         attack to evaluate potential defenses.
 
         Returns adversarial examples for the supplied model.
@@ -38,7 +39,7 @@ class CarliniL2:
         learning_rate: The learning rate for the attack algorithm. Smaller values
           produce better results but are slower to converge.
         binary_search_steps: The number of times we perform binary search to
-          find the optimal tradeoff-constant between distance and confidence. 
+          find the optimal tradeoff-constant between distance and confidence.
         max_iterations: The maximum number of iterations. Larger values are more
           accurate; setting too small will require a large learning rate and will
           produce poor results.
@@ -48,7 +49,9 @@ class CarliniL2:
           the initial constant is not important.
         """
 
-        image_size, num_channels, num_labels = model.image_size, model.num_channels, model.num_labels
+        image_size, num_channels, num_labels = (
+          model.image_size, model.num_channels, model.num_labels)
+        print('Nic L2: im, chan, labels', image_size, num_channels, num_labels)
         self.sess = sess
         self.TARGETED = targeted
         self.LEARNING_RATE = learning_rate
@@ -62,29 +65,31 @@ class CarliniL2:
         self.repeat = binary_search_steps >= 10
 
         shape = (batch_size,image_size,image_size,num_channels)
-        
+
         # the variable we're going to optimize over
         modifier = tf.Variable(np.zeros(shape,dtype=np.float32))
 
         # these are variables to be more efficient in sending data to tf
         self.timg = tf.Variable(np.zeros(shape), dtype=tf.float32)
-        self.tlab = tf.Variable(np.zeros((batch_size,num_labels)), dtype=tf.float32)
+        self.tlab = tf.Variable(np.zeros((batch_size,num_labels)),
+                                dtype=tf.float32)
         self.const = tf.Variable(np.zeros(batch_size), dtype=tf.float32)
 
         # and here's what we use to assign them
         self.assign_timg = tf.placeholder(tf.float32, shape)
         self.assign_tlab = tf.placeholder(tf.float32, (batch_size,num_labels))
         self.assign_const = tf.placeholder(tf.float32, [batch_size])
-        
+
         # the resulting image, tanh'd to keep bounded from -0.5 to 0.5
         self.newimg = tf.tanh(modifier + self.timg)/2
-        
+
         # prediction BEFORE-SOFTMAX of the model
         self.output = model.predict(self.newimg)
-        
+
         # distance to the input data
-        self.l2dist = tf.reduce_sum(tf.square(self.newimg-tf.tanh(self.timg)/2),[1,2,3])
-        
+        self.l2dist = tf.reduce_sum(tf.square(self.newimg-tf.tanh(self.timg)/2),
+                                    [1,2,3])
+
         # compute the probability of the label class versus the maximum other
         real = tf.reduce_sum((self.tlab)*self.output,1)
         other = tf.reduce_max((1-self.tlab)*self.output - (self.tlab*10000),1)
@@ -100,7 +105,7 @@ class CarliniL2:
         self.loss2 = tf.reduce_sum(self.l2dist)
         self.loss1 = tf.reduce_sum(self.const*loss1)
         self.loss = self.loss1+self.loss2
-        
+
         # Setup the adam optimizer and keep track of variables we're creating
         start_vars = set(x.name for x in tf.global_variables())
         optimizer = tf.train.AdamOptimizer(self.LEARNING_RATE)
@@ -113,7 +118,7 @@ class CarliniL2:
         self.setup.append(self.timg.assign(self.assign_timg))
         self.setup.append(self.tlab.assign(self.assign_tlab))
         self.setup.append(self.const.assign(self.assign_const))
-        
+
         self.init = tf.variables_initializer(var_list=[modifier]+new_vars)
 
     def attack(self, imgs, targets):
@@ -127,7 +132,8 @@ class CarliniL2:
         print('go up to',len(imgs))
         for i in range(0,len(imgs),self.batch_size):
             print('tick',i)
-            r.extend(self.attack_batch(imgs[i:i+self.batch_size], targets[i:i+self.batch_size]))
+            r.extend(self.attack_batch(imgs[i:i+self.batch_size],
+                                       targets[i:i+self.batch_size]))
         return np.array(r)
 
     def attack_batch(self, imgs, labs):
@@ -158,14 +164,14 @@ class CarliniL2:
         o_bestl2 = [1e10]*batch_size
         o_bestscore = [-1]*batch_size
         o_bestattack = [np.zeros(imgs[0].shape)]*batch_size
-        
+
         for outer_step in range(self.BINARY_SEARCH_STEPS):
             print(o_bestl2)
             # completely reset adam's internal state.
             self.sess.run(self.init)
             batch = imgs[:batch_size]
             batchlab = labs[:batch_size]
-    
+
             bestl2 = [1e10]*batch_size
             bestscore = [-1]*batch_size
 
@@ -177,20 +183,23 @@ class CarliniL2:
             self.sess.run(self.setup, {self.assign_timg: batch,
                                        self.assign_tlab: batchlab,
                                        self.assign_const: CONST})
-            
+
             prev = 1e6
             for iteration in range(self.MAX_ITERATIONS):
-                # perform the attack 
-                _, l, l2s, scores, nimg = self.sess.run([self.train, self.loss, 
-                                                         self.l2dist, self.output, 
-                                                         self.newimg])
+                # perform the attack
+                _, l, l2s, scores, nimg = self.sess.run(
+                  [self.train, self.loss,
+                   self.l2dist, self.output,
+                   self.newimg])
 
                 # print out the losses every 10%
                 if iteration%(self.MAX_ITERATIONS//10) == 0:
-                    print(iteration,self.sess.run((self.loss,self.loss1,self.loss2)))
+                    print(iteration,self.sess.run((self.loss,self.loss1,
+                                                   self.loss2)))
 
                 # check if we should abort search if we're getting nowhere.
-                if self.ABORT_EARLY and iteration%(self.MAX_ITERATIONS//10) == 0:
+                if (self.ABORT_EARLY
+                    and iteration%(self.MAX_ITERATIONS//10) == 0):
                     if l > prev*.9999:
                         break
                     prev = l
@@ -207,7 +216,8 @@ class CarliniL2:
 
             # adjust the constant as needed
             for e in range(batch_size):
-                if compare(bestscore[e], np.argmax(batchlab[e])) and bestscore[e] != -1:
+                if (compare(bestscore[e], np.argmax(batchlab[e]))
+                    and bestscore[e] != -1):
                     # success, divide const by two
                     upper_bound[e] = min(upper_bound[e],CONST[e])
                     if upper_bound[e] < 1e9:

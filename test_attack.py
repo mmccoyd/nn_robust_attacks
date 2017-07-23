@@ -38,7 +38,8 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
     samples: number of samples to use
     targeted: if true, construct targeted attacks, otherwise untargeted attacks
     start: offset into data to use
-    inception: if targeted and inception, randomly sample 100 targets intead of 1000
+    inception: if targeted and inception,
+                  randomly sample 100 targets intead of 1000
     """
     inputs = []
     targets = []
@@ -50,7 +51,8 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
                 seq = range(data.test_labels.shape[1])
 
             for j in seq:
-                if (j == np.argmax(data.test_labels[start+i])) and (inception == False):
+                if ((j == np.argmax(data.test_labels[start+i]))
+                    and (inception == False)):
                     continue
                 inputs.append(data.test_data[start+i])
                 targets.append(np.eye(data.test_labels.shape[1])[j])
@@ -67,14 +69,17 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
 if __name__ == "__main__":
     with tf.Session() as sess:
         data, model =  MNIST(), MNISTModel("models/mnist", sess)
-        attack = CarliniL2(sess, model, batch_size=9, max_iterations=1000, confidence=0)
+
+
+        attack = CarliniL2(sess, model, batch_size=9,
+                           max_iterations=1000, confidence=0)
 
         inputs, targets = generate_data(data, samples=1, targeted=True,
                                         start=0, inception=False)
         timestart = time.time()
         adv = attack.attack(inputs, targets)
         timeend = time.time()
-        
+
         print("Took",timeend-timestart,"seconds to run",len(inputs),"samples.")
 
         for i in range(len(adv)):
@@ -82,7 +87,7 @@ if __name__ == "__main__":
             show(inputs[i])
             print("Adversarial:")
             show(adv[i])
-            
+
             print("Classification:", model.model.predict(adv[i:i+1]))
 
             print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)

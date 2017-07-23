@@ -19,7 +19,8 @@ with tf.Session() as sess:
     data, model = CIFAR(), CIFARModel("models/cifar", sess)
     data, model = ImageNet(), InceptionModel(sess)
 
-    x = tf.placeholder(tf.float32, (None, model.image_size, model.image_size, model.num_channels))
+    x = tf.placeholder(tf.float32, (None, model.image_size, model.image_size,
+                                    model.num_channels))
     y = model.predict(x)
 
     r = []
@@ -27,5 +28,6 @@ with tf.Session() as sess:
         pred = sess.run(y, {x: data.test_data[i:i+BATCH_SIZE]})
         #print(pred)
         #print('real',data.test_labels[i],'pred',np.argmax(pred))
-        r.append(np.argmax(pred,1) == np.argmax(data.test_labels[i:i+BATCH_SIZE],1))
         print(np.mean(r))
+        r.append(np.argmax(pred,1) == np.argmax(
+          data.test_labels[i:i+BATCH_SIZE],1))
