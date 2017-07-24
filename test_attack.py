@@ -72,6 +72,8 @@ if __name__ == "__main__":
 
         print("Took",timeend-timestart,"seconds to run",len(inputs),"samples.")
 
+        assert False, 'deliberate stop'
+
         for i in range(len(adv)):
             print("Valid:")
             show(inputs[i])
@@ -81,3 +83,4 @@ if __name__ == "__main__":
             print("Classification:", model.model.predict(adv[i:i+1]))
 
             print("Total distortion:", np.sum((adv[i]-inputs[i])**2)**.5)
+    print('Done.')
