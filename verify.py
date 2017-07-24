@@ -28,6 +28,6 @@ with tf.Session() as sess:
         pred = sess.run(y, {x: data.test_data[i:i+BATCH_SIZE]})
         #print(pred)
         #print('real',data.test_labels[i],'pred',np.argmax(pred))
-        print(np.mean(r))
         r.append(np.argmax(pred,1) == np.argmax(
           data.test_labels[i:i+BATCH_SIZE],1))
+        print('Mean of batch accuracies', np.mean(r))
