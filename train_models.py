@@ -62,7 +62,7 @@ def train(data, file_name, params, num_epochs=50, batch_size=128, train_temp=1, 
     model.fit(data.train_data, data.train_labels,
               batch_size=batch_size,
               validation_data=(data.validation_data, data.validation_labels),
-              nb_epoch=num_epochs,
+              epochs=num_epochs,
               shuffle=True)
     
 
