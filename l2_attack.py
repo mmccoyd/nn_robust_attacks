@@ -135,7 +135,7 @@ class CarliniL2:
         Returns: ndarray of attack images
         """
         r = []
-        print('go up to',len(imgs))
+        print('go up to',len(imgs), 'attack images')
         for i in range(0,len(imgs),self.batch_size):
             print('tick',i)
             r.extend(self.attack_batch(imgs[i:i+self.batch_size],
@@ -172,11 +172,11 @@ class CarliniL2:
         o_bestattack = [np.zeros(imgs[0].shape)]*batch_size
 
         for outer_step in range(self.BINARY_SEARCH_STEPS):
-            print(o_bestl2)
+            print('b_step', outer_step, o_bestl2)
             # completely reset adam's internal state.
             self.sess.run(self.init)
-            batch = imgs[:batch_size]
-            batchlab = labs[:batch_size]
+            batch = imgs[:batch_size]  # mjm why slice, input flexibility?
+            batchlab = labs[:batch_size]  # mjm why slice
 
             bestl2 = [1e10]*batch_size
             bestscore = [-1]*batch_size
@@ -200,8 +200,9 @@ class CarliniL2:
 
                 # print out the losses every 10%
                 if iteration%(self.MAX_ITERATIONS//10) == 0:
-                    print(iteration,self.sess.run((self.loss,self.loss1,
-                                                   self.loss2)))
+                    print(' iter {:3d} losses {}'.format(
+                      iteration, self.sess.run((self.loss,self.loss1,
+                                                self.loss2))))
 
                 # check if we should abort search if we're getting nowhere.
                 if (self.ABORT_EARLY

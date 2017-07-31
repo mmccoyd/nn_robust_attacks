@@ -51,6 +51,7 @@ class MNIST:
         self.test_data = extract_data("data/t10k-images-idx3-ubyte.gz", 10000)
         self.test_labels = extract_labels("data/t10k-labels-idx1-ubyte.gz",
                                           10000)
+        #print('test lab shape', self.test_labels.shape)
 
         VALIDATION_SIZE = 5000
 
