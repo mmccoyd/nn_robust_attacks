@@ -9,13 +9,10 @@ import tensorflow as tf
 import numpy as np
 import time
 
-from setup_cifar import CIFAR, CIFARModel
 from setup_mnist import MNIST, MNISTModel
-from setup_inception import ImageNet, InceptionModel
 
 from l2_attack import CarliniL2
 from l0_attack import CarliniL0
-from li_attack import CarliniLi
 
 
 def show(img):
@@ -30,7 +27,7 @@ def show(img):
         print("".join([remap[int(round(x))] for x in img[i*28:i*28+28]]))
 
 
-def generate_data(data, samples, targeted=True, start=0, inception=False):
+def generate_data(data, samples, targeted=True, start=0):
     """
     Generate the input data to the attack algorithm.
 
@@ -38,21 +35,15 @@ def generate_data(data, samples, targeted=True, start=0, inception=False):
     samples: number of samples to use
     targeted: if true, construct targeted attacks, otherwise untargeted attacks
     start: offset into data to use
-    inception: if targeted and inception,
-                  randomly sample 100 targets intead of 1000
     """
     inputs = []
     targets = []
     for i in range(samples):
         if targeted:
-            if inception:
-                seq = random.sample(range(1,1001), 10)
-            else:
-                seq = range(data.test_labels.shape[1])
+            seq = range(data.test_labels.shape[1])
 
             for j in seq:
-                if ((j == np.argmax(data.test_labels[start+i]))
-                    and (inception == False)):
+                if ((j == np.argmax(data.test_labels[start+i]))):
                     continue
                 inputs.append(data.test_data[start+i])
                 targets.append(np.eye(data.test_labels.shape[1])[j])
@@ -74,8 +65,7 @@ if __name__ == "__main__":
         attack = CarliniL2(sess, model, batch_size=9,
                            max_iterations=1000, confidence=0)
 
-        inputs, targets = generate_data(data, samples=1, targeted=True,
-                                        start=0, inception=False)
+        inputs, targets = generate_data(data, samples=1, targeted=True, start=0)
         timestart = time.time()
         adv = attack.attack(inputs, targets)
         timeend = time.time()

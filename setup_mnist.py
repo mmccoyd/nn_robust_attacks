@@ -5,18 +5,14 @@
 ## This program is licenced under the BSD 2-Clause licence,
 ## contained in the LICENCE file in this directory.
 
-import tensorflow as tf
 import numpy as np
 import os
-import pickle
 import gzip
 import urllib.request
 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
-from keras.utils import np_utils
-from keras.models import load_model
 
 def extract_data(filename, num_images):
     with gzip.open(filename) as bytestream:

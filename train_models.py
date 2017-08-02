@@ -6,7 +6,6 @@
 ## contained in the LICENCE file in this directory.
 
 
-import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
@@ -14,7 +13,6 @@ from keras.optimizers import SGD
 
 import tensorflow as tf
 from setup_mnist import MNIST
-from setup_cifar import CIFAR
 import os
 
 def train(data, file_name, params, num_epochs=50, batch_size=128, train_temp=1,
@@ -67,51 +65,12 @@ def train(data, file_name, params, num_epochs=50, batch_size=128, train_temp=1,
               epochs=num_epochs,
               shuffle=True)
 
-
     if file_name != None:
         model.save(file_name)
 
     return model
 
-def train_distillation(data, file_name, params, num_epochs=50, batch_size=128, train_temp=1):
-    """
-    Train a network using defensive distillation.
-
-    Distillation as a Defense to Adversarial Perturbations against Deep Neural Networks
-    Nicolas Papernot, Patrick McDaniel, Xi Wu, Somesh Jha, Ananthram Swami
-    IEEE S&P, 2016.
-    """
-    if not os.path.exists(file_name+"_init"):
-        # Train for one epoch to get a good starting point.
-        train(data, file_name+"_init", params, 1, batch_size)
-
-    # now train the teacher at the given temperature
-    teacher = train(data, file_name+"_teacher", params, num_epochs, batch_size, train_temp,
-                    init=file_name+"_init")
-
-    # evaluate the labels at temperature t
-    predicted = teacher.predict(data.train_data)
-    with tf.Session() as sess:
-        y = sess.run(tf.nn.softmax(predicted/train_temp))
-        print(y)
-        data.train_labels = y
-
-    # train the student model at temperature t
-    student = train(data, file_name, params, num_epochs, batch_size, train_temp,
-                    init=file_name+"_init")
-
-    # and finally we predict at temperature 1
-    predicted = student.predict(data.train_data)
-
-    print(predicted)
-
 if not os.path.isdir('models'):
     os.makedirs('models')
 
-train(CIFAR(), "models/cifar", [64, 64, 128, 128, 256, 256], num_epochs=50)
 train(MNIST(), "models/mnist", [32, 32, 64, 64, 200, 200], num_epochs=50)
-
-train_distillation(MNIST(), "models/mnist-distilled-100", [32, 32, 64, 64, 200, 200],
-                   num_epochs=50, train_temp=100)
-train_distillation(CIFAR(), "models/cifar-distilled-100", [64, 64, 128, 128, 256, 256],
-                   num_epochs=50, train_temp=100)
