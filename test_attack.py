@@ -29,7 +29,10 @@ def show(img):
 
 def generate_data(data, samples, targeted=True, start=0):
     """
-    Generate the input data to the attack algorithm.
+    Pair (images, one-hots). For targeted, each one hot except correct one.
+
+    Returns: ndarray (samples, 28, 28, 1),
+             ndarray (samples, 10)
 
     data: the images to attack
     samples: number of samples to use
@@ -47,7 +50,7 @@ def generate_data(data, samples, targeted=True, start=0):
                     continue
                 inputs.append(data.test_data[start+i])
                 targets.append(np.eye(data.test_labels.shape[1])[j])
-        else:
+        else: # Just use the correct one hot label
             inputs.append(data.test_data[start+i])
             targets.append(data.test_labels[start+i])
 
@@ -58,6 +61,7 @@ def generate_data(data, samples, targeted=True, start=0):
 
 
 if __name__ == "__main__":
+    # Load trained model, init attack, pick targets, gen attack images.
     with tf.Session() as sess:
         data, model =  MNIST(), MNISTModel("models/mnist", sess)
 
@@ -74,6 +78,8 @@ if __name__ == "__main__":
 
         assert False, 'deliberate stop'
 
+
+        # Print some original and their attack images.
         for i in range(len(adv)):
             print("Valid:")
             show(inputs[i])

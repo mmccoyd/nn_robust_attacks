@@ -32,6 +32,10 @@ class CarliniL2:
 
         Returns adversarial examples for the supplied model.
 
+        model: - a keras.Sequential or Model
+               - with added: image_size, num_channels, num_labels
+               - implementing a predict(data) -> model(data)
+
         confidence: Confidence of adversarial examples: higher produces examples
           that are farther away, but more strongly classified as adversarial.
         batch_size: Number of attacks to run simultaneously.
@@ -127,6 +131,8 @@ class CarliniL2:
 
         If self.targeted is true, then the targets represents the target labels.
         If self.targeted is false, then targets are the original class labels.
+
+        Returns: ndarray of attack images
         """
         r = []
         print('go up to',len(imgs))

@@ -12,6 +12,7 @@ import numpy as np
 
 BATCH_SIZE = 1
 
+# Measure accuracy on test data by batches, print cumulative mean accuracy.
 with tf.Session() as sess:
     data, model = MNIST(), MNISTModel("models/mnist", sess)
 

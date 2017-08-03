@@ -15,6 +15,7 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 
 def extract_data(filename, num_images):
+    """Images as [-0.5, 0.5] shape (num_images, 28, 28, 1)."""
     with gzip.open(filename) as bytestream:
         bytestream.read(16)
         buf = bytestream.read(num_images*28*28)
@@ -24,6 +25,7 @@ def extract_data(filename, num_images):
         return data
 
 def extract_labels(filename, num_images):
+    """Labels as one hot [0.0, 1.0] array shape (num_images, 10)."""
     with gzip.open(filename) as bytestream:
         bytestream.read(8)
         buf = bytestream.read(1 * num_images)
@@ -32,6 +34,7 @@ def extract_labels(filename, num_images):
 
 class MNIST:
     def __init__(self):
+        """Data and one-hot labels for train/validation/test; download in needed."""
         if not os.path.exists("data"):
             os.mkdir("data")
             files = ["train-images-idx3-ubyte.gz",
@@ -58,7 +61,9 @@ class MNIST:
 
 
 class MNISTModel:
-    def __init__(self, restore, session=None):
+    """Keras model for 28x28x1 images with 10 labels."""
+    def __init__(self, restore, _session=None):
+        """Create model, restoring from file."""
         self.num_channels = 1
         self.image_size = 28
         self.num_labels = 10

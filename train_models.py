@@ -16,9 +16,20 @@ from setup_mnist import MNIST
 import os
 
 def train(data, file_name, params, num_epochs=50, batch_size=128, train_temp=1,
-          init=None):
+          init=None) -> keras.Sequential:
     """
     Standard neural network training procedure.
+
+    Create model
+      params are size of: [conv0, conv1, conv2, conv3, dense, dense]
+    load weights from init
+    fit model to data for num_epochs, with batch_size
+    save weights to file_name
+    return model
+
+    Model as defined in setup_mnist,
+     but: with dropout
+          image shape driven by parameter array
     """
     model = Sequential()
 
@@ -49,6 +60,7 @@ def train(data, file_name, params, num_epochs=50, batch_size=128, train_temp=1,
         model.load_weights(init)
 
     def fn(correct, predicted):
+        """Cross entropy of how much correct labels match predicted."""
         return tf.nn.softmax_cross_entropy_with_logits(
           labels=correct,
           logits=predicted/train_temp)
